@@ -108,14 +108,16 @@ async function checkMeteoAlerts() {
         if (endTime < Date.now()) 
           return;
 
-        if (meteoAlerts[item.identifier])
+        if (meteoAlerts[item.identifier] 
+          || !config.meteoAlerts.certaintyFilter.includes(item.certainty.toLowerCase()) 
+          || !config.meteoAlerts.severityFilter.includes(item.severity.toLowerCase()))
           return;
 
         warnigs.push({
           id: item.identifier,
           region: item.area,
-          certainty: item.certainty,
-          severity: item.severity,
+          certainty: item.certainty.toLowerCase(),
+          severity: item.severity.toLowerCase(),
           event: parseEvent(item.event),
           start: item.start,
           end: item.end
@@ -132,8 +134,8 @@ async function checkMeteoAlerts() {
         start: formatDate(item.start),
         end: formatDate(item.end),
         event: config.meteoAlerts.events[item.event] ?? item.event,
-        severity: config.meteoAlerts.severity[item.severity.toLowerCase()],
-        certainty: config.meteoAlerts.certainty[item.certainty.toLowerCase()]
+        severity: config.meteoAlerts.severity[item.severity],
+        certainty: config.meteoAlerts.certainty[item.certainty]
       });
       sendAlert(message, channels.weather);
       meteoAlerts[item.id] = Date.now();
