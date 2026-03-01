@@ -1,85 +1,81 @@
 ## Description
-node.js weather bot using meshcore.js and companion-usb
+
+Node.js weather and alert bot for [MeshCore](https://meshcore.co.uk) LoRa mesh networks. Connects to a Companion USB or Companion WiFi device and broadcasts alerts to configured channels.
+
+## Features
+
+- **Weather forecast** — daily forecast for multiple regions via [Open-Meteo](https://open-meteo.com)
+- **Lightning alerts** — real-time strike detection via [Blitzortung](https://www.blitzortung.org) MQTT
+- **Earthquake alerts** — real-time seismic events via [SeismicPortal](https://www.seismicportal.eu)
+- **Radiation alerts** — live CPM monitoring for nearby stations via [radmon.org](https://radmon.org)
+- **Weather warnings** — official CAP alerts from [meteoalarm.org](https://meteoalarm.org)
+
+All services are independently enable/disable-able and post to configurable MeshCore channels. Missing channels are created automatically on startup. Messages are retried up to 3 times until a nearby repeater confirms relay.
 
 ## Requirements
-You will need Meshcore device with Companion USB firmware connected to the computer
+
+A MeshCore device running **Companion USB** or **Companion WiFi** firmware, connected to the computer running this bot.
 
 ## Installation
-1. [Install Node.js 22 or higher](https://nodejs.org/en/download/)(most recent LTS recommended)
-2. Clone this repo & install dependencies via npm
+
+1. [Install Node.js 22 or higher](https://nodejs.org/en/download/) (most recent LTS recommended)
+2. Clone this repo and install dependencies:
+
 ```sh
 git clone https://github.com/recrof/MeshCore-WeatherBot.git
 cd MeshCore-WeatherBot
 npm install .
 ```
 
-## Usage
-1. Connect working MeshCore companion usb into computer you want to run WeatherBot on
-2. Edit `config.json`:
-```json
-{
-  "port": "/dev/ttyACM0", // port which is used for companion USB
-  "weatherAlarm": "6:00", // time to send daily weather forecast
-  "myPosition": { // position that will be used to compute storm proximity alert
-    "lat": 48.14, 
-    "lon": 17.11
-  },
-  "channels": { // what channel name should be used weather forecast and alerts
-    "alerts": "Public",
-    "weather": "Public"
-  },
-  "timers": { 
-    "blitzCollection": 600000, // how often should we aggregate thunder data for evaluation
-    "meteoAlerts": 600000, // how often should we download weather altert data
-    "meteoAlerts": 600000 // how often should we weather alterts checked
-  },
-  "blitzArea": { // thunder reporting area. if there is storm detected inside, report it
-    "minLat": 47.51,
-    "minLon": 15.54,
-    "maxLat": 48.76,
-    "maxLon": 18.62
-  },
-  "compasNames": { // compass direction names in your local language
-    "N": "North",
-    "NE": "North-East",
-    "E": "East",
-    "SE": "South-East",
-    "S": "South",
-    "SW": "South-West",
-    "W": "West",
-    "NW": "North-West"
-  },
-  "meteoAlerts": { // meteo alarm config sections
-    "enabled": true, // enables or disables meteo alarm 
-    "timeout": 60, // how long should the warning be muted after sending, in minutes
-    "severityFilter": ["severe", "extreme"], // severity levels which will be send 
-    "certaintyFilter": ["likely", "observed"], // certainty levels which will be send 
-    "url": "https://feeds.meteoalarm.org/feeds/meteoalarm-legacy-atom-slovakia", // atom feed with warnings
-    "regions": [
-      "Bratislava" // list of monitored regions/ areas
-    ],
-    "severity": { // severity translations
-      "unknown": "Unknown",
-      "minor": "Minor",
-      "moderate": "Moderate",
-      "severe": "Severe",
-      "extreme ": "Extreme"
-    },
-    "certainty": { // ceverity translations
-      "observed": "Observed",
-      "likely": "Likely (> 50%)",
-      "possible": "Possible (<= 50%)",
-      "unlikely": "Unlikely (~ 0%)",
-      "unknown": "Unknown"
-    }
-  }
-}
-```
-3. then run:
-```
-node index.mjs
+## Configuration
+
+Copy or edit `config.mjs`. All settings are documented inline. Key sections:
+
+| Section | Description |
+|---|---|
+| `meshcore` | Connection type (Serial/TCP), port/host, and your GPS position |
+| `forecast` | Channel, send time, and list of regions to forecast |
+| `blitz` | Channel and bounding box for lightning monitoring |
+| `quake` | Channel, minimum magnitude, and bounding box for earthquake monitoring |
+| `radiation` | Channel, CPM alert threshold, bounding box, and poll interval |
+| `meteoAlerts` | Channel, feed URL, severity/certainty filters, and monitored regions |
+| `send` | Retry count and repeater wait timeout |
+| `compasNames` | Compass direction labels (translate to your language) |
+
+### Connection
+
+**Serial (Companion USB):**
+```js
+type: "Serial",
+port: "/dev/ttyUSB0",   // or COMx on Windows, /dev/cu.usbmodem* on macOS
 ```
 
-**Note:**
-This weather bot is currently hardcoded to use weather data from shmu.sk for Bratislava region.
-If this does not apply to your region, you will need to implement your own functions to retrieve weater forecasts.
+**TCP (Companion WiFi):**
+```js
+type: "TCP",
+host: "192.168.0.1:5000",
+```
+
+### Channels
+
+Set `channel` in each service section to the MeshCore channel name you want alerts posted on (e.g. `"#alerts"`, `"#weather"`). Channels are created automatically if they do not exist — no need to pre-configure them in the MeshCore client.
+
+## Usage
+
+```sh
+node index.mjs
+# or override the serial port:
+node index.mjs /dev/ttyUSB1
+```
+
+## Extras
+
+`radiation-demo.mjs` is a standalone script that shows current radiation levels near a given coordinate:
+
+```sh
+node radiation-demo.mjs [lat] [lon]
+# example:
+node radiation-demo.mjs 48.14 17.11
+```
+
+It fetches the 3 nearest online stations from radmon.org and recent historical measurements from [Safecast](https://safecast.org).
