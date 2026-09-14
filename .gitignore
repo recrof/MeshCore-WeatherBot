@@ -3,3 +3,4 @@ meshcore_reference
 .claude
 package-lock.json
 .vscode/launch.json
+.state

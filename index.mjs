@@ -2,11 +2,12 @@ import { Constants, NodeJSSerialConnection, TCPConnection } from '@liamcottle/me
 import { getTodaysForecast } from './lib/forecast.mjs';
 import * as utils from './lib/utils.mjs';
 import config from './config.mjs';
-import { init as initMessenger, sendAlert } from './lib/messenger.mjs';
+import { init as initMessenger, connect as connectMessenger, sendAlert } from './lib/messenger.mjs';
 import { start as startBlitz } from './lib/blitz.mjs';
 import { start as startQuake } from './lib/quake.mjs';
 import { start as startRadiation } from './lib/radiation.mjs';
 import { start as startMeteoAlerts } from './lib/meteoAlerts.mjs';
+import { start as startPohoda } from './lib/pohoda.mjs';
 
 // Prefix all console output with ISO timestamp
 for (const level of ['log', 'debug', 'warn', 'error']) {
@@ -18,33 +19,42 @@ const port = process.argv[2] ?? config.meshcore.port;
 
 const channels = {};
 
+// Whatever we ended up connecting to, named for the log. A TCP setup has no serial port,
+// so reporting `port` there just prints "undefined".
+let target;
 let meshcore;
 if (config.meshcore.type === 'TCP') {
-  console.log(`Connecting to Companion on TCP '${config.meshcore.host}'`);
-  meshcore = new TCPConnection(config.meshcore.host);
+  target = config.meshcore.host;
+  console.log(`Connecting to Companion on TCP '${target}'`);
+  const [tcpHost, tcpPort] = target.split(':');
+  meshcore = new TCPConnection(tcpHost, parseInt(tcpPort));
 } else if (config.meshcore.type === 'Serial') {
-  console.log(`Connecting to Companion USB on '${port}'`);
-  meshcore = new NodeJSSerialConnection(port);
+  target = port;
+  console.log(`Connecting to Companion USB on '${target}'`);
+  meshcore = new NodeJSSerialConnection(target);
 }
 
-initMessenger(meshcore);
+initMessenger(meshcore, target);
+
+// The connection comes and goes (the messenger reconnects whenever the companion drops),
+// but the feeds behind the backends must only ever be started once.
+let backendsStarted = false;
 
 meshcore.on('connected', async () => {
-  console.log(`Connected to ${port}`);
+  console.log(`Connected to ${target}`);
 
-  const channelNames = new Set(
-    ['forecast', 'blitz', 'quake', 'meteoAlerts', 'radiation']
-      .flatMap(key => config[key].enabled ? [config[key].channel] : [])
-  );
-
-  for (const name of channelNames) {
-    channels[name] = await meshcore.findChannelByName(name);
-    if (!channels[name]) {
-      console.log(`Channel "${name}" not found, creating...`);
-      channels[name] = await createChannel(name);
-    }
-    console.log(`Channel "${name}" ready at index ${channels[name].channelIdx}.`);
+  try {
+    await utils.withTimeout(setupChannels(), 30_000, 'channel setup');
+  } catch (e) {
+    console.log(`Channel setup failed: ${e?.message ?? e}`);
+    return;
   }
+
+  if (backendsStarted) {
+    console.log('weatherBot back online.');
+    return;
+  }
+  backendsStarted = true;
 
   if (config.blitz.enabled) {
     console.debug('enabling blitzortung handler');
@@ -69,6 +79,11 @@ meshcore.on('connected', async () => {
   if (config.radiation.enabled) {
     console.debug('enabling radiation monitor');
     startRadiation(channels);
+  }
+
+  if (config.pohoda.enabled) {
+    console.debug('enabling Pohoda news monitor');
+    startPohoda(channels);
   }
 
   console.log('weatherBot ready.');
@@ -109,6 +124,23 @@ async function sendWeather() {
   }
 }
 
+async function setupChannels() {
+  const channelNames = new Set(
+    ['forecast', 'blitz', 'quake', 'meteoAlerts', 'radiation', 'pohoda']
+      .flatMap(key => config[key].enabled ? [config[key].channel] : [])
+  );
+
+  // Refreshed in place: the backends hold this same object, so they see the new entries.
+  for (const name of channelNames) {
+    channels[name] = await meshcore.findChannelByName(name);
+    if (!channels[name]) {
+      console.log(`Channel "${name}" not found, creating...`);
+      channels[name] = await createChannel(name);
+    }
+    console.log(`Channel "${name}" ready at index ${channels[name].channelIdx}.`);
+  }
+}
+
 async function createChannel(name) {
   const allChannels = await meshcore.getChannels();
   // Reuse first deleted (empty-name) slot, otherwise append after last channel
@@ -127,4 +159,4 @@ async function createChannel(name) {
   return { channelIdx: idx, name, secret };
 }
 
-await meshcore.connect();
+await connectMessenger();

@@ -5,15 +5,15 @@ export default {
     enabled: true,
 
     // Serial configuration (Companion USB)
-    type: "Serial",
-    port: "/dev/cu.usbmodem1101",  // serial port of the Companion USB device
+    // type: "Serial",
+    // port: "/dev/ttyACM0",  // serial port of the Companion USB device
 
     /*
       TCP configuration - uncomment if you want to connect to a
       companion wifi instead of companion usb
     */
-    // type: "TCP",
-    // host: "192.168.0.1:5000",     // IP address and port of the Companion WiFi device
+    type: "TCP",
+    host: "192.168.1.226:5555",     // IP address and port of the Companion WiFi device
 
     // Your position – used to calculate bearing and distance to lightning/quakes
     lat: 48.14,
@@ -23,7 +23,7 @@ export default {
   // ── Daily weather forecast ─────────────────────────────────────────────────
   forecast: {
     enabled: true,
-    channel: "#weather",             // MeshCore channel name to post forecasts on
+    channel: "#slovakia",      // MeshCore channel name to post forecasts on
     alarm: "*",                // time of day to send the forecast (HH:MM), use "*" to send immediately on start
     regions: [
       // List of locations to include in the daily forecast.
@@ -40,10 +40,10 @@ export default {
     channel: "#alerts",             // MeshCore channel name to post lightning alerts on
     timerCollection: 600000,      // how often (ms) to evaluate collected lightning data and send alerts
     monitorArea: {                // bounding box – only lightning inside this area is tracked
-      minLat: 47.51,
+      minLat: 47.50,
       minLon: 15.54,
-      maxLat: 48.76,
-      maxLon: 18.62
+      maxLat: 49.61,
+      maxLon: 23.04
     }
   },
 
@@ -53,11 +53,18 @@ export default {
     channel: "#alerts",             // MeshCore channel name to post earthquake alerts on
     minMag: 3,                    // minimum Richter magnitude to report
     monitorArea: {                // bounding box – only quakes inside this area are reported
-      minLat: 47.51,
+      minLat: 47.50,
       minLon: 15.54,
-      maxLat: 48.76,
-      maxLon: 18.62
+      maxLat: 49.61,
+      maxLon: 23.04
     }
+  },
+  // ── Pohoda festival news (stageocean.com) ─────────────────────────────────
+  pohoda: {
+    enabled: true,
+    channel: "#pohoda",           // MeshCore channel name to post news titles on
+    url: "https://api.stageocean.com/v1/news?eventId%5B%5D=019ec6a4-c6d4-8118-0220-dd69f353b51a&eventId%5B%5D=null&organizationId=01983111-427d-2a5f-c41b-bd416cab1d0f&status=published&sortBy=publishedAt&sortOrder=desc&isFeed=true&perPage=15&locale=sk",
+    pollInterval: 300             // how often (seconds) to check for new articles
   },
 
   // ── Message sending behaviour ──────────────────────────────────────────────
@@ -85,12 +92,11 @@ export default {
     channel: "#alerts",             // MeshCore channel name to post radiation alerts on
     pollInterval: 300,            // how often (seconds) to poll for new readings
     alertLevel: "warning",        // station threshold to trigger on: "warning" or "alert"
-    nearestStations: 3,           // number of nearest stations to monitor
-    monitorArea: {                // bounding box – only stations inside this area are checked
-      minLat: 47.51,
+    monitorArea: {                // bounding box – every station inside this area is watched
+      minLat: 47.50,
       minLon: 15.54,
-      maxLat: 48.76,
-      maxLon: 18.62
+      maxLat: 49.61,
+      maxLon: 23.04
     },
     requiredReadings: 4,          // consecutive readings above threshold before alerting (filters cosmic-ray spikes)
     timeout: 60                   // minutes before re-alerting the same station
@@ -114,45 +120,218 @@ export default {
     regions: [                    // list of area names to monitor (must match names in the feed exactly)
       "Bratislava"
     ],
+    regionAliases: {
+      "Banská Bystrica": "BB",
+      "Banská Štiavnica": "BS",
+      "Bardejov": "BJ",
+      "Bánovce nad Bebravou": "BN",
+      "Brezno": "BR",
+      "Bratislava": "BA",
+      "Bytča": "BY",
+      "Čadca": "CA",
+      "Detva": "DT",
+      "Dolný Kubín": "DK",
+      "Dunajská Streda": "DS",
+      "Galanta": "GA",
+      "Gelnica": "GL",
+      "Hlohovec": "HC",
+      "Humenné": "HE",
+      "Ilava": "IL",
+      "Kežmarok": "KK",
+      "Komárno": "KN",
+      "Košice": "KE",
+      "Košice-okolie": "KS",
+      "Krupina": "KA",
+      "Kysucké Nové Mesto": "KM",
+      "Levice": "LV",
+      "Levoča": "LE",
+      "Liptovský Mikuláš": "LM",
+      "Lučenec": "LC",
+      "Malacky": "MA",
+      "Martin": "MT",
+      "Medzilaborce": "ML",
+      "Michalovce": "MI",
+      "Myjava": "MY",
+      "Námestovo": "NO",
+      "Nitra": "NR",
+      "Nové Mesto nad Váhom": "NM",
+      "Nové Zámky": "NZ",
+      "Partizánske": "PE",
+      "Pezinok": "PK",
+      "Piešťany": "PN",
+      "Poltár": "PT",
+      "Poprad": "PP",
+      "Považská Bystrica": "PB",
+      "Prešov": "PO",
+      "Prievidza": "PD",
+      "Púchov": "PU",
+      "Revúca": "RA",
+      "Rimavská Sobota": "RS",
+      "Rožňava": "RV",
+      "Ružomberok": "RK",
+      "Sabinov": "SB",
+      "Senec": "SC",
+      "Senica": "SE",
+      "Skalica": "SI",
+      "Snina": "SV",
+      "Sobrance": "SO",
+      "Spišská Nová Ves": "SN",
+      "Stará Ľubovňa": "SL",
+      "Stropkov": "SP",
+      "Svidník": "SK",
+      "Šaľa": "SA",
+      "Topoľčany": "TO",
+      "Trebišov": "TV",
+      "Trenčín": "TN",
+      "Trnava": "TT",
+      "Turčianske Teplice": "TR",
+      "Tvrdošín": "TS",
+      "Veľký Krtíš": "VK",
+      "Vranov nad Topľou": "VT",
+      "Zlaté Moravce": "ZM",
+      "Zvolen": "ZV",
+      "Žarnovica": "ZC",
+      "Žiar nad Hronom": "ZH",
+      "Žilina": "ZA"
+    },
+    regionGroups: {
+      "BA-kraj": ["Bratislava", "Malacky", "Pezinok", "Senec"],
+      "TT-kraj": ["Dunajská Streda", "Galanta", "Hlohovec", "Piešťany", "Senica", "Skalica", "Trnava"],
+      "TN-kraj": ["Bánovce nad Bebravou", "Ilava", "Myjava", "Nové Mesto nad Váhom", "Partizánske", "Považská Bystrica", "Prievidza", "Púchov", "Trenčín"],
+      "NR-kraj": ["Komárno", "Levice", "Nitra", "Nové Zámky", "Šaľa", "Topoľčany", "Zlaté Moravce"],
+      "ZA-kraj": ["Bytča", "Čadca", "Dolný Kubín", "Kysucké Nové Mesto", "Liptovský Mikuláš", "Martin", "Námestovo", "Ružomberok", "Turčianske Teplice", "Tvrdošín", "Žilina"],
+      "BB-kraj": ["Banská Bystrica", "Banská Štiavnica", "Brezno", "Detva", "Krupina", "Lučenec", "Poltár", "Revúca", "Rimavská Sobota", "Veľký Krtíš", "Zvolen", "Žarnovica", "Žiar nad Hronom"],
+      "PO-kraj": ["Bardejov", "Humenné", "Kežmarok", "Levoča", "Medzilaborce", "Poprad", "Prešov", "Sabinov", "Snina", "Stará Ľubovňa", "Stropkov", "Svidník", "Vranov nad Topľou"],
+      "KE-kraj": ["Gelnica", "Košice", "Košice-okolie", "Michalovce", "Rožňava", "Sobrance", "Spišská Nová Ves", "Trebišov"]
+    },
     // Template for the alert message.
     // Available placeholders: {region} {start} {end} {event} {severity} {certainty}
-    messageTemplate: "{region} {start} - {end}\n{event}\nSeverity: {severity}, Certainty: {certainty}",
+    severityFilter: [             // only warnings with these severity levels are sent
+      "severe",
+      "extreme",
+    ],
+    certaintyFilter: [            // only warnings with these certainty levels are sent
+      "likely",
+      "observed",
+    ],
+    regions: [                    // list of area names to monitor (must match names in the feed exactly)
+      "Bratislava",
+      "Malacky",
+      "Pezinok",
+      "Senec",
+      "Dunajská Streda",
+      "Galanta",
+      "Hlohovec",
+      "Piešťany",
+      "Senica",
+      "Skalica",
+      "Trnava",
+      "Bánovce nad Bebravou",
+      "Ilava",
+      "Myjava",
+      "Nové Mesto nad Váhom",
+      "Partizánske",
+      "Považská Bystrica",
+      "Prievidza",
+      "Púchov",
+      "Trenčín",
+      "Komárno",
+      "Levice",
+      "Nitra",
+      "Nové Zámky",
+      "Šaľa",
+      "Topoľčany",
+      "Zlaté Moravce",
+      "Bytča",
+      "Čadca",
+      "Dolný Kubín",
+      "Kysucké Nové Mesto",
+      "Liptovský Mikuláš",
+      "Martin",
+      "Námestovo",
+      "Ružomberok",
+      "Turčianske Teplice",
+      "Tvrdošín",
+      "Žilina",
+      "Banská Bystrica",
+      "Banská Štiavnica",
+      "Brezno",
+      "Detva",
+      "Krupina",
+      "Lučenec",
+      "Poltár",
+      "Revúca",
+      "Rimavská Sobota",
+      "Veľký Krtíš",
+      "Zvolen",
+      "Žarnovica",
+      "Žiar nad Hronom",
+      "Bardejov",
+      "Humenné",
+      "Kežmarok",
+      "Levoča",
+      "Medzilaborce",
+      "Poprad",
+      "Prešov",
+      "Sabinov",
+      "Snina",
+      "Stará Ľubovňa",
+      "Stropkov",
+      "Svidník",
+      "Vranov nad Topľou",
+      "Gelnica",
+      "Košice",
+      "Michalovce",
+      "Rožňava",
+      "Sobrance",
+      "Spišská Nová Ves",
+      "Trebišov"
+    ],
+    eventMaxChars: 50,
+    // Template for the alert message.
+    // Available placeholders: {region} {start} {end} {duration} {event} {severity} {certainty}
+    messageTemplate: "s: {start}, d: {duration}\n{event}\n{severity}/{certainty}\nR: {region}",
+
+    // If the share of matching regions reaches this percentage of configured `regions`,
+    // the regions list is replaced with `regionAllLabel`.
+    regionAllThresholdPercent: 80,
+    regionAllLabel: "SR",
 
     // Severity level labels – translate to your language if needed
     severity: {
-      unknown:  "Unknown",
-      minor:    "Minor",
-      moderate: "Moderate",
-      severe:   "Severe",
-      extreme:  "Extreme"
+      unknown:  "?",
+      minor:    "🟢 0.",
+      moderate: "🟡 1.",
+      severe:   "🟠 2.",
+      extreme:  "🔴 3."
     },
 
     // Certainty level labels – translate to your language if needed
     certainty: {
-      observed: "Observed",
-      likely:   "Likely (> 50%)",
-      possible: "Possible (<= 50%)",
-      unlikely: "Unlikely (~ 0%)",
-      unknown:  "Unknown"
+      observed: "100%",    // CAP: occurring or already occurred — not a probability
+      likely:   ">50%",
+      possible: "<=50%",
+      unlikely: "~0%",
+      unknown:  "?"
     },
 
     // Event type labels – translate to your language if needed
     events: {
-      wind:            "Wind",
-      snoworice:       "Snow or Ice",
-      thunderstorm:    "Thunderstorm",
-      fog:             "Fog",
-      hightemperature: "High Temperature",
-      lowtemperature:  "Low Temperature",
-      coastalevent:    "Coastal Event",
-      forestfire:      "Forest Fire",
+      wind:            "🌬️",
+      snoworice:       "❄️🧊",
+      thunderstorm:    "⛈️",
+      fog:             "🌫️",
+      hightemperature: "🌡️♨️",
+      lowtemperature:  "🌡️🧊",
+      coastalevent:    "🌊",
+      forestfire:      "🔥🌲",
       avalanche:       "Avalanche",
-      rain:            "Rain",
+      rain:            "🌧️",
       flood:           "Flood",
       rainflood:       "Rain Flood",
       marinehazard:    "Marine Hazard",
       drought:         "Drought",
-      icing:           "Icing"
+      icing:           "🥶"
     }
   }
 }
